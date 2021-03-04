@@ -1,6 +1,7 @@
 const express = require('express')
 const router = express.Router()
 const Author = require('../models/author')
+
 //all authors route
 router.get('/', async (req,res) => {
     let searchOptions = {}
