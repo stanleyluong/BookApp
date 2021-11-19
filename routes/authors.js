@@ -19,11 +19,11 @@ router.get('/', async (req,res) => {
     
 })
 
-router.get('/new',(req,res)=>{
+router.get('/new', (req,res) => {
     res.render('authors/new', { author: new Author() })
 })
 
-router.post('/', async (req,res)=>{
+router.post('/', async (req,res) => {
     const author = new Author({
         name: req.body.name
     })
@@ -38,7 +38,7 @@ router.post('/', async (req,res)=>{
     }
 })
 
-router.get('/:id', async (req, res)=>{
+router.get('/:id', async (req, res) => {
     try {
         const author = await Author.findById(req.params.id)
         const books = await Book.find({author: author.id}).limit(6).exec()
@@ -51,7 +51,7 @@ router.get('/:id', async (req, res)=>{
     }
 })
 
-router.get('/:id/edit', async (req,res)=>{
+router.get('/:id/edit', async (req,res) => {
     try {
         const author = await Author.findById(req.params.id)
         res.render('authors/edit', { author: author })
@@ -60,7 +60,7 @@ router.get('/:id/edit', async (req,res)=>{
     }
 })
 
-router.put('/:id',async (req,res)=>{
+router.put('/:id', async (req,res) => {
     let author
     try {
         author = await Author.findById(req.params.id)
@@ -71,21 +71,27 @@ router.put('/:id',async (req,res)=>{
         if(author==null){
             res.redirect('/')
         } else {
-            res.redirect(`/authors/${author.id}`)
+            res.render('authors/edit', {
+                author: author,
+                errorMessage: 'Error updating Author'
+            })        
         }
     }
 })
-router.delete('/:id',async (req,res)=>{
+
+router.delete('/:id', async (req,res) => {
+    console.log('in delete')
     let author
     try {
         author = await Author.findById(req.params.id)
         await author.remove()
         res.redirect('/authors') 
-    } catch {
+    } catch (error){
+        console.log('error',error)
         if(author==null){
             res.redirect('/')
         } else {
-            res.redirect(`authors/${author.id}`)
+            res.redirect(`/authors/${author.id}`)
         }
     }
 })
