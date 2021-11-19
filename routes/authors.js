@@ -80,14 +80,12 @@ router.put('/:id', async (req,res) => {
 })
 
 router.delete('/:id', async (req,res) => {
-    console.log('in delete')
     let author
     try {
         author = await Author.findById(req.params.id)
         await author.remove()
         res.redirect('/authors') 
-    } catch (error){
-        console.log('error',error)
+    } catch {
         if(author==null){
             res.redirect('/')
         } else {
