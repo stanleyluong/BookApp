@@ -4,7 +4,6 @@ const Book = require('../models/book')
 const Author = require('../models/author')
 const imageMimeTypes = ['image/jpeg','image/png','image/gif']
 
-//all books route
 router.get('/', async (req,res) => {
     let query = Book.find()
     if(req.query.title != null && req.query.title != ''){
@@ -27,12 +26,10 @@ router.get('/', async (req,res) => {
     }  
 })
 
-//new book route
 router.get('/new', async (req, res) => {
     renderNewPage(res, new Book())
 })
 
-//create book route
 router.post('/', async (req,res) => {
     const book = new Book({
         title: req.body.title,
@@ -45,7 +42,6 @@ router.post('/', async (req,res) => {
     saveCover(book, req.body.cover)
     try {
         const newBook = await book.save()
-        // res.redirect(`books/${newBook.id}`)
         res.redirect(`books/${newBook.id}`)
     } catch { 
         renderNewPage(res, book, true) 
@@ -53,12 +49,10 @@ router.post('/', async (req,res) => {
 })
 
 router.put('/:id', async (req, res) => {
-    console.log('begin')
     let book
 
     try {
         book = await Book.findById(req.params.id)
-        console.log('book in try', book)
         book.title = req.body.title
         book.author = req.body.author
         book.publishDate = new Date(req.body.publishDate)
@@ -70,18 +64,15 @@ router.put('/:id', async (req, res) => {
         await book.save()
         res.redirect(`/books/${book.id}`)
     } catch(error) {
-        console.log('errorr',error)
         if( book != null) {
             renderEditPage(res, book, true) 
         } else {
-            console.log(error)
-            // res.redirect('/')
+            res.redirect('/')
         }
         renderNewPage(res, book, true)
     }
 })
 
-//delete book page
 router.delete('/:id', async (req, res) => {
     let book
     try {
@@ -125,30 +116,22 @@ async function renderFormPage(res, book, form, hasError = false){
     }
 }
 
-
-//show book
 router.get('/:id', async (req, res) => {
-    console.log('get')
     try {
-        console.log('get start')
         const book = await  Book.findById(req.params.id).populate('author').exec()
-        console.log('book',)
         res.render('books/show', { book: book })
     } catch(error) {
-        console.log('hi',error)
-        // res.redirect('/')
+        res.redirect('/')
     }
 })
 
-//edit book route
 router.get('/:id/edit', async (req, res) => {
     try {
         const book = await Book.findById(req.params.id)
         renderEditPage(res,book)
     } catch (error) {
-        console.log(error)
+        res.redirect('/')
     }
-    // renderEditPage(res, book)
 })
 
 function saveCover(book, coverEncoded){

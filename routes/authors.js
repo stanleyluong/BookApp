@@ -3,7 +3,6 @@ const router = express.Router()
 const Author = require('../models/author')
 const Book = require('../models/book')
 
-//all authors route
 router.get('/', async (req,res) => {
     let searchOptions = {}
     if(req.query.name!=null && req.query.name != ""){
@@ -20,12 +19,10 @@ router.get('/', async (req,res) => {
     
 })
 
-//new author route
 router.get('/new',(req,res)=>{
     res.render('authors/new', { author: new Author() })
 })
 
-//create authors route
 router.post('/', async (req,res)=>{
     const author = new Author({
         name: req.body.name
