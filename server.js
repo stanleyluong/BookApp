@@ -19,11 +19,17 @@ app.use(expressLayouts)
 app.use(methodOverride('_method'))
 app.use(express.static('public'))
 app.use(bodyParser.urlencoded({limit:'10mb', extended: false }))
+console.log("DATABASE_URI:", process.env.DATABASE_URI);
 
-mongoose.connect(process.env.DATABASE_URL, { 
+mongoose.connect(process.env.DATABASE_URI, {
     useNewUrlParser: true,
-    useUnifiedTopology: true
-})
+    useUnifiedTopology: true,
+  }).then(() => {
+    console.log('Connected to MongoDB');
+  }).catch(err => {
+    console.error('Connection error', err);
+  });
+  
 
 const db = mongoose.connection
 db.on('error', error => console.error(error))
