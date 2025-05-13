@@ -1,0 +1,225 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Globals:
+  Function:
+    Timeout: 10
+    MemorySize: 128
+    Environment:
+      Variables:
+        MONGODB_URI: mongodb+srv://user:guest@cluster0.egnjo.mongodb.net/myFirstDatabase?retryWrites=true&w=majority
+
+Resources:
+  BookAppApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: Prod
+
+  # --- Authors Endpoints ---
+  GetAuthorsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: authors/
+      Handler: app.get_authors_handler
+      Runtime: python3.13
+      Events:
+        GetAuthors:
+          Type: Api
+          Properties:
+            Path: /authors
+            Method: get
+            RestApiId: !Ref BookAppApi
+        OptionsAuthors:
+          Type: Api
+          Properties:
+            Path: /authors
+            Method: options
+            RestApiId: !Ref BookAppApi
+
+  CreateAuthorFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: authors/
+      Handler: app.create_author_handler
+      Runtime: python3.13
+      Events:
+        CreateAuthor:
+          Type: Api
+          Properties:
+            Path: /authors
+            Method: post
+            RestApiId: !Ref BookAppApi
+
+  GetAuthorByIdFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: authors/
+      Handler: app.get_author_by_id_handler
+      Runtime: python3.13
+      Events:
+        GetAuthorById:
+          Type: Api
+          Properties:
+            Path: /authors/{authorId}
+            Method: get
+            RestApiId: !Ref BookAppApi
+        OptionsAuthorById:
+          Type: Api
+          Properties:
+            Path: /authors/{authorId}
+            Method: options
+            RestApiId: !Ref BookAppApi
+
+  UpdateAuthorFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: authors/
+      Handler: app.update_author_handler
+      Runtime: python3.13
+      Events:
+        UpdateAuthor:
+          Type: Api
+          Properties:
+            Path: /authors/{authorId}
+            Method: put
+            RestApiId: !Ref BookAppApi
+
+  DeleteAuthorFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: authors/
+      Handler: app.delete_author_handler
+      Runtime: python3.13
+      Events:
+        DeleteAuthor:
+          Type: Api
+          Properties:
+            Path: /authors/{authorId}
+            Method: delete
+            RestApiId: !Ref BookAppApi
+
+  # --- Books Endpoints ---
+  GetBooksFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: books/
+      Handler: app.get_books_handler
+      Runtime: python3.13
+      Events:
+        GetBooks:
+          Type: Api
+          Properties:
+            Path: /books
+            Method: get
+            RestApiId: !Ref BookAppApi
+        OptionsBooks:
+          Type: Api
+          Properties:
+            Path: /books
+            Method: options
+            RestApiId: !Ref BookAppApi
+
+  CreateBookFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: books/
+      Handler: app.create_book_handler
+      Runtime: python3.13
+      Events:
+        CreateBook:
+          Type: Api
+          Properties:
+            Path: /books
+            Method: post
+            RestApiId: !Ref BookAppApi
+
+  GetBookByIdFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: books/
+      Handler: app.get_book_by_id_handler
+      Runtime: python3.13
+      Events:
+        GetBookById:
+          Type: Api
+          Properties:
+            Path: /books/{bookId}
+            Method: get
+            RestApiId: !Ref BookAppApi
+        OptionsBookById:
+          Type: Api
+          Properties:
+            Path: /books/{bookId}
+            Method: options
+            RestApiId: !Ref BookAppApi
+
+  UpdateBookFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: books/
+      Handler: app.update_book_handler
+      Runtime: python3.13
+      Events:
+        UpdateBook:
+          Type: Api
+          Properties:
+            Path: /books/{bookId}
+            Method: put
+            RestApiId: !Ref BookAppApi
+
+  DeleteBookFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: books/
+      Handler: app.delete_book_handler
+      Runtime: python3.13
+      Events:
+        DeleteBook:
+          Type: Api
+          Properties:
+            Path: /books/{bookId}
+            Method: delete
+            RestApiId: !Ref BookAppApi
+
+  GetCoverUploadUrlFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: books/
+      Handler: app.get_cover_upload_url_handler
+      Runtime: python3.13
+      Environment:
+        Variables:
+          BOOK_COVERS_S3_BUCKET: !Ref BookCoversBucket
+      Events:
+        GetCoverUploadUrl:
+          Type: Api
+          Properties:
+            Path: /books/{bookId}/cover-upload-url
+            Method: get
+            RestApiId: !Ref BookAppApi
+
+  BookCoversBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${AWS::StackName}-bookcovers-${AWS::Region}-${AWS::AccountId}"
+      CorsConfiguration:
+        CorsRules:
+          - AllowedOrigins:
+              - "http://localhost:3000"
+              - "https://example.com"
+              - "https://bookapp.stanleyluong.com"
+            AllowedMethods:
+              - PUT
+              - GET
+              - HEAD
+            AllowedHeaders:
+              - "*"
+            ExposedHeaders:
+              - ETag
+            MaxAge: 3600
+
+Outputs:
+  BookAppApiUrl:
+    Description: Base URL for BookAppApi
+    Value: !Sub "https://${BookAppApi}.execute-api.${AWS::Region}.amazonaws.com/Prod"
+    
