@@ -8,6 +8,7 @@ Globals:
     Environment:
       Variables:
         MONGODB_URI: mongodb+srv://user:guest@cluster0.egnjo.mongodb.net/myFirstDatabase?retryWrites=true&w=majority
+        BOOK_COVERS_S3_BUCKET: !Ref BookCoversBucket
 
 Resources:
   BookAppApi:
@@ -105,6 +106,12 @@ Resources:
       CodeUri: books/
       Handler: app.get_books_handler
       Runtime: python3.13
+      Environment:
+        Variables:
+          BOOK_COVERS_S3_BUCKET: !Ref BookCoversBucket
+      Policies:
+        - S3ReadPolicy:
+            BucketName: !Ref BookCoversBucket
       Events:
         GetBooks:
           Type: Api
@@ -139,6 +146,12 @@ Resources:
       CodeUri: books/
       Handler: app.get_book_by_id_handler
       Runtime: python3.13
+      Environment:
+        Variables:
+          BOOK_COVERS_S3_BUCKET: !Ref BookCoversBucket
+      Policies:
+        - S3ReadPolicy:
+            BucketName: !Ref BookCoversBucket
       Events:
         GetBookById:
           Type: Api
@@ -190,6 +203,9 @@ Resources:
       Environment:
         Variables:
           BOOK_COVERS_S3_BUCKET: !Ref BookCoversBucket
+      Policies:
+        - S3CrudPolicy:
+            BucketName: !Ref BookCoversBucket
       Events:
         GetCoverUploadUrl:
           Type: Api
@@ -206,16 +222,21 @@ Resources:
         CorsRules:
           - AllowedOrigins:
               - "http://localhost:3000"
-              - "https://example.com"
               - "https://bookapp.stanleyluong.com"
             AllowedMethods:
               - PUT
+              - POST
               - GET
               - HEAD
+              - DELETE
             AllowedHeaders:
               - "*"
             ExposedHeaders:
               - ETag
+              - x-amz-meta-custom-header
+              - x-amz-server-side-encryption
+              - x-amz-request-id
+              - x-amz-id-2
             MaxAge: 3600
 
 Outputs:

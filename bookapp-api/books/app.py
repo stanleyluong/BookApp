@@ -391,10 +391,15 @@ def update_book_handler(event, context):
             if set_s3_key_to_null:
                  result = current_db.books.update_one({"_id": book_oid}, {"$set": {"coverImageS3Key": None}})
             else: # No actual DB update to perform other than potential S3 operations already done
-                # Fetch and return the potentially modified book (e.g. if S3 key changed)
+                # Fetch the updated book to return it
                 updated_book = current_db.books.find_one({"_id": book_oid})
                 if updated_book:
                     updated_book["_id"] = str(updated_book["_id"])
+                    if "author" in updated_book and isinstance(updated_book["author"], ObjectId):
+                        updated_book["author"] = str(updated_book["author"])
+                    if "publishDate" in updated_book and isinstance(updated_book["publishDate"], datetime.datetime):
+                        updated_book["publishDate"] = updated_book["publishDate"].strftime("%Y-%m-%d")
+
                     if BOOK_COVERS_S3_BUCKET and updated_book.get("coverImageS3Key"):
                         try:
                             presigned_url = s3_client.generate_presigned_url(
@@ -404,12 +409,13 @@ def update_book_handler(event, context):
                             )
                             updated_book["coverImageUrl"] = presigned_url
                         except Exception as e:
-                            print(f"Error generating presigned URL: {e}")
-                    return make_response(200, {"message": "Book image processed, no other fields updated.", "book": updated_book}, event)
-                else:
-                    return make_response(404, {"error": f"Book with id {book_id_str} not found"}, event)
+                            print(f"Error generating presigned URL for updated book {updated_book.get('coverImageS3Key')}: {e}")
+                            updated_book["coverImageUrl"] = None
 
-        result = current_db.books.update_one({"_id": book_oid}, {"$set": update_data})
+                print(f"Successfully updated book with ID: {book_id_str}")
+                return make_response(200, {"message": "Book updated successfully", "book": updated_book}, event)
+        else:
+            result = current_db.books.update_one({"_id": book_oid}, {"$set": update_data})
 
         if result.matched_count == 0:
             return make_response(404, {"error": f"Book with id {book_id_str} not found"}, event)
@@ -418,13 +424,12 @@ def update_book_handler(event, context):
             # Could mean data was the same, or some fields weren't actual updates to stored values
              return make_response(200, {"message": "Book found, but no changes applied or data was the same.", "book_id": book_id_str}, event)
 
-
         # Fetch the updated book to return it
         updated_book = current_db.books.find_one({"_id": book_oid})
         if updated_book:
             updated_book["_id"] = str(updated_book["_id"])
             if "author" in updated_book and isinstance(updated_book["author"], ObjectId):
-                 updated_book["author"] = str(updated_book["author"])
+                updated_book["author"] = str(updated_book["author"])
             if "publishDate" in updated_book and isinstance(updated_book["publishDate"], datetime.datetime):
                 updated_book["publishDate"] = updated_book["publishDate"].strftime("%Y-%m-%d")
 
@@ -514,12 +519,17 @@ def get_cover_upload_url_handler(event, context):
             return make_response(404, {"error": f"Book with id {book_id_str} not found"}, event)
         if not BOOK_COVERS_S3_BUCKET:
             return make_response(500, {"error": "S3 bucket not configured"}, event)
+        # Get contentType from query params, default to image/jpeg
+        content_type = "image/jpeg"
+        if event.get("queryStringParameters") and event["queryStringParameters"].get("contentType"):
+            content_type = event["queryStringParameters"]["contentType"]
+        print(f"Presigned URL Content-Type: {content_type}")
         # Generate S3 key for the cover image
         s3_key = f"covers/{book_id_str}/upload.jpg"
         try:
             upload_url = s3_client.generate_presigned_url(
                 'put_object',
-                Params={'Bucket': BOOK_COVERS_S3_BUCKET, 'Key': s3_key, 'ContentType': 'image/jpeg'},
+                Params={'Bucket': BOOK_COVERS_S3_BUCKET, 'Key': s3_key, 'ContentType': content_type},
                 ExpiresIn=600  # 10 minutes
             )
         except Exception as e:
