@@ -1,4 +1,4 @@
-import { Alert, Box, Button, Card, CardContent, CircularProgress, List, ListItem, ListItemText, Typography } from '@mui/material';
+import { Alert, Box, Button, Card, CardContent, CircularProgress, List, ListItem, ListItemText, Typography, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from '@mui/material';
 import React, { useEffect, useState } from 'react';
 import { Link as RouterLink, useNavigate, useParams } from 'react-router-dom';
 
@@ -10,6 +10,7 @@ const AuthorDetailsPage = () => {
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -43,18 +44,29 @@ const AuthorDetailsPage = () => {
         <CardContent>
           <Typography variant="h5" gutterBottom>{author.name}</Typography>
           <Button variant="outlined" color="primary" sx={{ mr: 1 }} onClick={() => navigate(`/authors/${authorId}/edit`)}>Edit</Button>
-          <Button variant="outlined" color="error" onClick={async () => {
-            if (window.confirm('Are you sure you want to delete this author?')) {
-              const res = await fetch(`${API_BASE_URL}/authors/${authorId}`, { method: 'DELETE' });
-              if (res.ok) {
-                navigate('/authors');
-              } else {
-                alert('Failed to delete author.');
-              }
-            }
-          }}>Delete</Button>
+          <Button variant="outlined" color="error" onClick={() => setDeleteDialogOpen(true)}>Delete</Button>
         </CardContent>
       </Card>
+      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
+        <DialogTitle>Delete Author</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to delete <b>{author?.name}</b>?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteDialogOpen(false)} color="primary">Cancel</Button>
+          <Button color="error" variant="contained" onClick={async () => {
+            const res = await fetch(`${API_BASE_URL}/authors/${authorId}`, { method: 'DELETE' });
+            if (res.ok) {
+              navigate('/authors');
+            } else {
+              setError('Failed to delete author.');
+            }
+            setDeleteDialogOpen(false);
+          }}>Delete</Button>
+        </DialogActions>
+      </Dialog>
       <Typography variant="h6" gutterBottom>Books by this author</Typography>
       {books.length === 0 ? (
         <Typography>No books found for this author.</Typography>
