@@ -12,6 +12,7 @@ const Layout = () => {
           </Typography>
           <Button color="inherit" component={RouterLink} to="/authors">Authors</Button>
           <Button color="inherit" component={RouterLink} to="/books">Books</Button>
+          <Button color="inherit" component={RouterLink} to="/about">About</Button>
         </Toolbar>
       </AppBar>
       <Container maxWidth="lg">

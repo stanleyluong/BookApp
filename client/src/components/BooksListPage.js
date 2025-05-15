@@ -79,7 +79,7 @@ const BooksListPage = () => {
           {books.map((book) => (
             <ListItem key={book._id} component="div" sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <span>
-                <RouterLink to={`/books/${book._id}`}>{book.title}</RouterLink>
+                <RouterLink to={`/books/${book._id}`} sx={{ textDecoration: 'none' }}>{book.title}</RouterLink>
               </span>
               <span>
                 <Button

@@ -11,6 +11,7 @@ const BookForm = () => {
   const [authors, setAuthors] = useState([]);
   const [description, setDescription] = useState('');
   const [coverImage, setCoverImage] = useState(null);
+  const [coverImagePreview, setCoverImagePreview] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
@@ -42,6 +43,9 @@ const BookForm = () => {
           setDescription(data.description || '');
           setPublishDate(data.publishDate || '');
           setPageCount(data.pageCount ? String(data.pageCount) : '');
+          if (data.coverImageUrl) {
+            setCoverImagePreview(data.coverImageUrl);
+          }
         } catch (e) {
           setError(e.message);
         }
@@ -49,6 +53,25 @@ const BookForm = () => {
       })();
     }
   }, [bookId]);
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setCoverImage(file);
+      // Create a preview URL for the selected image
+      const previewUrl = URL.createObjectURL(file);
+      setCoverImagePreview(previewUrl);
+    }
+  };
+
+  // Cleanup preview URL when component unmounts or when image changes
+  useEffect(() => {
+    return () => {
+      if (coverImagePreview && coverImagePreview.startsWith('blob:')) {
+        URL.revokeObjectURL(coverImagePreview);
+      }
+    };
+  }, [coverImagePreview]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -98,7 +121,7 @@ const BookForm = () => {
           headers: { 'Content-Type': coverImage.type }
         });
         if (!s3UploadResponse.ok) {
-          const s3ErrorText = await s3UploadResponse.text();
+          await s3UploadResponse.text(); // just to consume the body
           throw new Error(`S3 Upload failed: ${s3UploadResponse.status}`);
         }
         if (coverImageS3Key) {
@@ -175,20 +198,40 @@ const BookForm = () => {
           margin="normal"
           inputProps={{ min: 1 }}
         />
-        <Button
-          variant="contained"
-          component="label"
-          sx={{ mt: 2 }}
-        >
-          Upload Cover Image
-          <input
-            type="file"
-            accept="image/*"
-            hidden
-            onChange={e => setCoverImage(e.target.files[0])}
-          />
-        </Button>
-        {coverImage && <Typography variant="body2" sx={{ mt: 1 }}>{coverImage.name}</Typography>}
+        <Box sx={{ mt: 2, mb: 2 }}>
+          <Button
+            variant="contained"
+            component="label"
+          >
+            Upload Cover Image
+            <input
+              type="file"
+              accept="image/*"
+              hidden
+              onChange={handleImageChange}
+            />
+          </Button>
+          {coverImage && (
+            <Typography variant="body2" sx={{ mt: 1 }}>
+              Selected: {coverImage.name}
+            </Typography>
+          )}
+        </Box>
+        {coverImagePreview && (
+          <Box sx={{ mt: 2, mb: 2, textAlign: 'center' }}>
+            <img
+              src={coverImagePreview}
+              alt="Cover preview"
+              style={{
+                maxWidth: '200px',
+                maxHeight: '300px',
+                objectFit: 'contain',
+                borderRadius: '4px',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+              }}
+            />
+          </Box>
+        )}
         {error && <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>}
         {success && <Alert severity="success" sx={{ mt: 2 }}>Book saved!</Alert>}
         <Box sx={{ mt: 3 }}>
